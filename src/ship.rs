@@ -1,5 +1,4 @@
-use crate::health;
-use crate::velocity;
+use crate::{health, physics};
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -12,8 +11,10 @@ pub enum Direction {
 
 #[derive(Bundle)]
 pub struct ShipBundle {
-    pub movement_bundle: velocity::MovementBundle,
     pub sprite_bundle: SpriteBundle,
+    pub physics_bundle: physics::PysicsBundle,
+
+    pub acceleration: physics::Acceleration,
 
     pub direction: Direction,
     pub health: health::Health,

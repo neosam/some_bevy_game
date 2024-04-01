@@ -1,20 +1,25 @@
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 use ship::ship_orientation;
 use some_bevy_tools::camera_2d;
 use some_bevy_tools::controller_2d;
 use some_bevy_tools::despawn;
 use some_bevy_tools::input;
 use some_bevy_tools::loading;
-use some_bevy_tools::range;
 
 mod assets;
 mod health;
+mod physics;
 mod ship;
-mod velocity;
 
 fn main() {
     App::new()
+        .insert_resource(RapierConfiguration {
+            gravity: Vec2::new(0.0, 0.0),
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins)
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(1.0))
         .add_plugins(loading::LoadingPlugin(
             GameState::Loading,
             GameState::InGame,
@@ -26,21 +31,14 @@ fn main() {
         .add_plugins(despawn::CleanupPlugin(GameState::InGame))
         .add_plugins(camera_2d::Camera2DPlugin)
         .add_plugins(controller_2d::TopDownControllerPlugin)
-        //.add_plugins(controller_2d::SimpleTopDownControllerPlugin)
-        .add_plugins(range::RangePlugin::<velocity::VelocityX>::default())
-        .add_plugins(range::RangePlugin::<velocity::VelocityY>::default())
         .init_state::<GameState>()
         .add_systems(OnEnter(GameState::InGame), startup_ingame)
         .add_systems(
             Update,
             (
                 ship_orientation,
-                (
-                    user_event_handler,
-                    velocity::acceleration_system,
-                    velocity::movement_system,
-                )
-                    .chain(),
+                user_event_handler,
+                physics::acceleration_controller,
             )
                 .run_if(in_state(GameState::InGame)),
         )
@@ -66,7 +64,8 @@ pub fn startup_ingame(mut commands: Commands, image_assets: Res<assets::ImageAss
                     },
                     ..default()
                 },
-                movement_bundle: velocity::MovementBundle::with_acceleration(1000.0, 1000.0),
+                physics_bundle: physics::PysicsBundle::dynamic_rectangle(50.0, 50.0),
+                acceleration: physics::Acceleration::new(1000.0, 300.0),
                 direction: ship::Direction::Up,
                 health: health::Health::new(0.0, 100.0),
             },
@@ -86,6 +85,7 @@ pub fn startup_ingame(mut commands: Commands, image_assets: Res<assets::ImageAss
             ..default()
         },
         despawn::Cleanup(GameState::InGame),
+        physics::PysicsBundle::fixed_rectangle(50.0, 50.0),
     ));
 
     commands.spawn((
@@ -98,28 +98,28 @@ pub fn startup_ingame(mut commands: Commands, image_assets: Res<assets::ImageAss
 fn user_event_handler(
     mut controller_events: EventReader<input::ActionEvent<controller_2d::TopDownAction>>,
     mut query: Query<
-        (&mut velocity::Acceleration, &mut ship::Direction),
+        (&mut physics::Acceleration, &mut ship::Direction),
         With<controller_2d::SimpleTopDownController>,
     >,
 ) {
     if let Ok((mut acceleration, mut direction)) = query.get_single_mut() {
-        acceleration.1 = velocity::AccelerationType::None;
+        acceleration.direction = physics::AccelerationDirection::None;
         for action in controller_events.read() {
             match action.action {
                 controller_2d::TopDownAction::MoveUp => {
-                    acceleration.1 = velocity::AccelerationType::Up;
+                    acceleration.direction = physics::AccelerationDirection::Up;
                     *direction = ship::Direction::Up;
                 }
                 controller_2d::TopDownAction::MoveDown => {
-                    acceleration.1 = velocity::AccelerationType::Down;
+                    acceleration.direction = physics::AccelerationDirection::Down;
                     *direction = ship::Direction::Down;
                 }
                 controller_2d::TopDownAction::MoveLeft => {
-                    acceleration.1 = velocity::AccelerationType::Left;
+                    acceleration.direction = physics::AccelerationDirection::Left;
                     *direction = ship::Direction::Left;
                 }
                 controller_2d::TopDownAction::MoveRight => {
-                    acceleration.1 = velocity::AccelerationType::Right;
+                    acceleration.direction = physics::AccelerationDirection::Right;
                     *direction = ship::Direction::Right;
                 }
                 _ => {}
