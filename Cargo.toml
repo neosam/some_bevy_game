@@ -1,0 +1,33 @@
+[package]
+name = "some_bevy_game"
+version = "0.2.1"
+edition = "2021"
+description = "A collection of tools which can be used in the Bevy Engine."
+license = "MIT OR Apache-2.0 OR CC0-1.0"
+authors = ["Simon Goller <simon.goller@posteo.de>"]
+repository = "https://github.com/neosam/some_bevy_game"
+homepage = "https://github.com/neosam/some_bevy_game"
+keywords = ["gamedev", "bevy"]
+categories = ["game-development", "game-engines"]
+exclude = ["assets/*"]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# Compile with Performance Optimizations:
+# https://bevyengine.org/learn/book/getting-started/setup/#compile-with-performance-optimizations
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+[dependencies.bevy]
+version = "0.13.1"
+default-features = false
+
+[dependencies.some_bevy_tools]
+version = "0.2.1"
+default-features = false
+features = ["display_deluxe", "loading"]
