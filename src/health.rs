@@ -5,8 +5,8 @@ use some_bevy_tools::range;
 pub struct HealthMarker;
 
 pub type Health = range::Range<HealthMarker>;
-pub type DeathEvent = range::StartRangeLimitReachedEvent<HealthMarker>;
-pub type FullHealEvent = range::EndRangeLimitReachedEvent<HealthMarker>;
+//pub type DeathEvent = range::StartRangeLimitReachedEvent<HealthMarker>;
+//pub type FullHealEvent = range::EndRangeLimitReachedEvent<HealthMarker>;
 
 pub struct HealthPlugin;
 
