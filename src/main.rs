@@ -114,7 +114,11 @@ pub fn startup_ingame(
             parent.spawn((
                 Name::new("Stars".to_string()),
                 MaterialMesh2dBundle {
-                    mesh: meshes.add(Mesh::from(Rectangle::default())).into(),
+                    mesh: meshes
+                        .add(Mesh::from(Rectangle {
+                            half_size: Vec2::new(1280.0, 1280.0),
+                        }))
+                        .into(),
                     transform: Transform::default()
                         .with_scale(Vec3::splat(1280.0))
                         .with_translation(Vec3::new(0.0, 0.0, -1.0)),
