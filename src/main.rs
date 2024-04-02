@@ -1,3 +1,4 @@
+use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use bevy::sprite::Material2dPlugin;
 use bevy::sprite::MaterialMesh2dBundle;
@@ -26,7 +27,8 @@ fn main() {
     .insert_resource(stars::StarMaterialSettings {
         speed_x: 0.0,
         speed_y: -10000.0,
-    });
+    })
+    .insert_resource(AssetMetaCheck::Never);
     // Enable fullscreen in wasm
     #[cfg(target_arch = "wasm32")]
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
