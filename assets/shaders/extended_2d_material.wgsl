@@ -20,6 +20,8 @@
 struct StarsMaterial {
     relative_pos_x: f32,
     relative_pos_y: f32,
+    _padding1: f32,
+    _padding2: f32,
 }
 
 @group(2) @binding(100)

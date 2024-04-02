@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy::sprite::Material2dPlugin;
 use bevy::sprite::MaterialMesh2dBundle;
+#[cfg(target_arch = "wasm32")]
+use bevy::window::WindowMode;
 use bevy_rapier2d::prelude::*;
 use ship::ship_orientation;
 use some_bevy_tools::camera_2d;
@@ -16,17 +18,34 @@ mod ship;
 mod stars;
 
 fn main() {
-    App::new()
-        .insert_resource(RapierConfiguration {
-            gravity: Vec2::new(0.0, 0.0),
+    let mut app = App::new();
+    app.insert_resource(RapierConfiguration {
+        gravity: Vec2::new(0.0, 0.0),
+        ..Default::default()
+    })
+    .insert_resource(stars::StarMaterialSettings {
+        speed_x: 0.0,
+        speed_y: -10000.0,
+    });
+    // Enable fullscreen in wasm
+    #[cfg(target_arch = "wasm32")]
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            title: "Some Bevy Game".to_string(),
+            //mode: WindowMode::BorderlessFullscreen,
             ..Default::default()
-        })
-        .insert_resource(stars::StarMaterialSettings {
-            speed_x: 0.0,
-            speed_y: -10000.0,
-        })
-        .add_plugins(DefaultPlugins)
-        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(1.0))
+        }),
+        ..Default::default()
+    }));
+    #[cfg(not(target_arch = "wasm32"))]
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            title: "Some Bevy Game".to_string(),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }));
+    app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(1.0))
         .add_plugins(loading::LoadingPlugin(
             GameState::Loading,
             GameState::InGame,
