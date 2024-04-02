@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use bevy::sprite::Material2dPlugin;
+use bevy::sprite::MaterialMesh2dBundle;
 use bevy_rapier2d::prelude::*;
 use ship::ship_orientation;
 use some_bevy_tools::camera_2d;
@@ -11,12 +13,17 @@ mod assets;
 mod health;
 mod physics;
 mod ship;
+mod stars;
 
 fn main() {
     App::new()
         .insert_resource(RapierConfiguration {
             gravity: Vec2::new(0.0, 0.0),
             ..Default::default()
+        })
+        .insert_resource(stars::StarMaterialSettings {
+            speed_x: 0.0,
+            speed_y: -10000.0,
         })
         .add_plugins(DefaultPlugins)
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(1.0))
@@ -31,6 +38,7 @@ fn main() {
         .add_plugins(despawn::CleanupPlugin(GameState::InGame))
         .add_plugins(camera_2d::Camera2DPlugin)
         .add_plugins(controller_2d::TopDownControllerPlugin)
+        .add_plugins(Material2dPlugin::<stars::StarMaterial>::default())
         .init_state::<GameState>()
         .add_systems(OnEnter(GameState::InGame), startup_ingame)
         .add_systems(
@@ -52,7 +60,12 @@ pub enum GameState {
     InGame,
 }
 
-pub fn startup_ingame(mut commands: Commands, image_assets: Res<assets::ImageAssets>) {
+pub fn startup_ingame(
+    mut commands: Commands,
+    image_assets: Res<assets::ImageAssets>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<stars::StarMaterial>>,
+) {
     let player = commands
         .spawn((
             ship::ShipBundle {
@@ -88,11 +101,28 @@ pub fn startup_ingame(mut commands: Commands, image_assets: Res<assets::ImageAss
         physics::PysicsBundle::fixed_rectangle(50.0, 50.0),
     ));
 
-    commands.spawn((
-        Camera2dBundle::default(),
-        despawn::Cleanup(GameState::InGame),
-        camera_2d::Camera2DController::new_follow_with_speed(player, 100.0),
-    ));
+    let star_material = materials.add(stars::StarMaterial::default());
+
+    commands
+        .spawn((
+            Camera2dBundle::default(),
+            despawn::Cleanup(GameState::InGame),
+            camera_2d::Camera2DController::new_follow_with_speed(player, 100.0),
+            InheritedVisibility::VISIBLE,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Name::new("Stars".to_string()),
+                MaterialMesh2dBundle {
+                    mesh: meshes.add(Mesh::from(Rectangle::default())).into(),
+                    transform: Transform::default()
+                        .with_scale(Vec3::splat(1280.0))
+                        .with_translation(Vec3::new(0.0, 0.0, -1.0)),
+                    material: star_material.clone(),
+                    ..default()
+                },
+            ));
+        });
 }
 
 fn user_event_handler(

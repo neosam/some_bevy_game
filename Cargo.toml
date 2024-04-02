@@ -29,7 +29,7 @@ default-features = false
 
 [dependencies.some_bevy_tools]
 version = "0.2.1"
-default-features = false
+#default-features = false
 features = ["display_deluxe", "loading", "bevy_rapier2d"]
 
 [dependencies.bevy_rapier2d]
