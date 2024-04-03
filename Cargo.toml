@@ -35,3 +35,6 @@ features = ["display_deluxe", "loading", "bevy_rapier2d"]
 
 [dependencies.bevy_rapier2d]
 version = "0.25.0"
+
+[dependencies.uuid]
+version = "1.4.1"

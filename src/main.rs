@@ -14,6 +14,7 @@ use some_bevy_tools::loading;
 
 mod assets;
 mod health;
+mod map_builder;
 mod physics;
 mod ship;
 mod stars;
@@ -107,6 +108,8 @@ pub fn startup_ingame(
             controller_2d::SimpleTopDownController::new(10.0),
         ))
         .id();
+
+    map_builder::build_corridor().spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
 
     commands.spawn((
         SpriteBundle {
