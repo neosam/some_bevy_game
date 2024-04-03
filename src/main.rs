@@ -6,6 +6,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::WindowMode;
 use bevy_rapier2d::prelude::*;
 use ship::ship_orientation;
+use ship::TutorialTrigger;
 use some_bevy_tools::camera_2d;
 use some_bevy_tools::controller_2d;
 use some_bevy_tools::despawn;
@@ -61,13 +62,27 @@ fn main() {
         .add_plugins(camera_2d::Camera2DPlugin)
         .add_plugins(controller_2d::TopDownControllerPlugin)
         .add_plugins(Material2dPlugin::<stars::StarMaterial>::default())
+        .add_plugins(
+            some_bevy_tools::collision_detection::CollisionDetectionPlugin::<
+                ship::Ship,
+                ship::TutorialTrigger,
+            >::default(),
+        )
+        .add_plugins(
+            some_bevy_tools::collision_detection::CollisionDetectionPlugin::<
+                ship::Ship,
+                physics::SingleTrigger,
+            >::default(),
+        )
         .init_state::<GameState>()
         .add_systems(OnEnter(GameState::InGame), startup_ingame)
         .add_systems(
             Update,
             (
+                physics::remove_after_collision::<ship::Ship, physics::SingleTrigger>,
                 ship_orientation,
                 user_event_handler,
+                ship::tutorial_trigger_system,
                 physics::acceleration_controller,
             )
                 .run_if(in_state(GameState::InGame)),
@@ -99,17 +114,19 @@ pub fn startup_ingame(
                     },
                     ..default()
                 },
-                physics_bundle: physics::PysicsBundle::dynamic_rectangle(50.0, 50.0),
+                physics_bundle: physics::PhysicsBundle::dynamic_rectangle(50.0, 50.0),
                 acceleration: physics::Acceleration::new(1000.0, 300.0),
                 direction: ship::Direction::Up,
                 health: health::Health::new(0.0, 100.0),
+                ship: ship::Ship,
             },
             despawn::Cleanup(GameState::InGame),
             controller_2d::SimpleTopDownController::new(10.0),
         ))
         .id();
 
-    map_builder::build_corridor().spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
+    map_builder::build_corridor(TutorialTrigger::SimplyForward, TutorialTrigger::TurnedRight)
+        .spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
 
     let star_material = materials.add(stars::StarMaterial::default());
 

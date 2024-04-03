@@ -1,6 +1,8 @@
 use crate::assets::ImageAssets;
+use crate::physics::SingleTrigger;
 use crate::{physics, GameState};
 use bevy::prelude::*;
+use core::marker::Copy;
 use some_bevy_tools::despawn;
 use uuid::Uuid;
 
@@ -8,17 +10,25 @@ use uuid::Uuid;
 pub struct TileMarker(Uuid);
 
 #[derive(Clone, Copy)]
-pub enum TileType {
+pub enum TileType<T: Clone + Copy> {
     Wall,
+    _Trigger(T),
+    SingleTrigger(T),
 }
 
-struct Tile {
+struct Tile<T: Clone + Copy> {
     x: i32,
     y: i32,
-    tile_type: TileType,
+    tile_type: TileType<T>,
 }
 
-impl Tile {
+enum TileInfo<T: Clone + Copy> {
+    Image(Handle<Image>),
+    Trigger(T),
+    SingleTrigger(T),
+}
+
+impl<T: Clone + Copy + Component> Tile<T> {
     pub fn spawn_tile(
         &self,
         commands: &mut Commands,
@@ -28,32 +38,71 @@ impl Tile {
     ) {
         let position = Vec2::new(self.x as f32 * 50.0, self.y as f32 * 50.0) + center;
         let position = Vec3::new(position.x, position.y, 0.0);
-        let image = match self.tile_type {
-            TileType::Wall => image_assets.wall.clone(),
+        let tile_info = match self.tile_type {
+            TileType::Wall => TileInfo::Image(image_assets.wall.clone()),
+            TileType::_Trigger(trigger) => TileInfo::Trigger(trigger),
+            TileType::SingleTrigger(trigger) => TileInfo::SingleTrigger(trigger),
         };
-        commands.spawn((
-            SpriteBundle {
-                texture: image,
-                transform: Transform::from_translation(position),
-                sprite: Sprite {
-                    custom_size: Some(Vec2::new(50.0, 50.0)),
-                    ..default()
-                },
-                ..default()
-            },
-            despawn::Cleanup(GameState::InGame),
-            physics::PysicsBundle::fixed_rectangle(50.0, 50.0),
-            TileMarker(id),
-        ));
+        match tile_info {
+            TileInfo::Image(image) => {
+                commands.spawn((
+                    SpriteBundle {
+                        texture: image,
+                        transform: Transform::from_translation(position),
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::new(50.0, 50.0)),
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    despawn::Cleanup(GameState::InGame),
+                    physics::PhysicsBundle::fixed_rectangle(50.0, 50.0),
+                    TileMarker(id),
+                ));
+            }
+            TileInfo::Trigger(trigger) => {
+                commands.spawn((
+                    physics::PhysicsBundle::trigger(50.0, 50.0),
+                    trigger,
+                    Transform::from_translation(position),
+                    GlobalTransform::default(),
+                ));
+            }
+            TileInfo::SingleTrigger(trigger) => {
+                commands.spawn((
+                    physics::PhysicsBundle::trigger(50.0, 50.0),
+                    SingleTrigger,
+                    trigger,
+                    Transform::from_translation(position),
+                    GlobalTransform::default(),
+                ));
+                //commands.spawn((
+                //    SpriteBundle {
+                //        texture: image_assets.ship.clone(),
+                //        transform: Transform::from_translation(position),
+                //        sprite: Sprite {
+                //            custom_size: Some(Vec2::new(50.0, 50.0)),
+                //            ..default()
+                //        },
+                //        ..default()
+                //    },
+                //    despawn::Cleanup(GameState::InGame),
+                //    TileMarker(id),
+                //    physics::PhysicsBundle::trigger(50.0, 50.0),
+                //    SingleTrigger,
+                //    trigger,
+                //));
+            }
+        }
     }
 }
 
-pub struct Map {
-    tiles: Vec<Tile>,
+pub struct Map<T: Clone + Copy> {
+    tiles: Vec<Tile<T>>,
     pub id: Uuid,
 }
 
-impl Map {
+impl<T: Clone + Copy + Component> Map<T> {
     pub fn new() -> Self {
         Self {
             tiles: Vec::new(),
@@ -68,12 +117,12 @@ impl Map {
     }
 }
 
-pub struct MapDraft {
+pub struct MapDraft<T: Clone + Copy> {
     pub width: u32,
-    pub tiles: Vec<Option<TileType>>,
+    pub tiles: Vec<Option<TileType<T>>>,
 }
 
-impl MapDraft {
+impl<T: Clone + Copy + Component> MapDraft<T> {
     pub fn new(width: u32, height: u32) -> Self {
         Self {
             width,
@@ -89,16 +138,16 @@ impl MapDraft {
         (index as u32 % self.width, index as u32 / self.width)
     }
 
-    pub fn _get_tile(&self, x: u32, y: u32) -> Option<TileType> {
+    pub fn _get_tile(&self, x: u32, y: u32) -> Option<TileType<T>> {
         self.tiles[self.pos_to_index(x, y)]
     }
 
-    pub fn set_tile(&mut self, x: u32, y: u32, tile_type: TileType) {
+    pub fn set_tile(&mut self, x: u32, y: u32, tile_type: TileType<T>) {
         let index = self.pos_to_index(x, y);
         self.tiles[index] = Some(tile_type);
     }
 
-    pub fn to_map(&self, center: (i32, i32)) -> Map {
+    pub fn to_map(&self, center: (i32, i32)) -> Map<T> {
         let mut map = Map::new();
         for (index, tile) in self.tiles.iter().enumerate() {
             if let Some(tile) = tile {
@@ -114,7 +163,7 @@ impl MapDraft {
     }
 }
 
-pub fn build_corridor() -> Map {
+pub fn build_corridor<T: Clone + Copy + Component>(trigger1: T, trigger2: T) -> Map<T> {
     let mut draft = MapDraft::new(25, 25);
     for y in 0..22 {
         draft.set_tile(4, y, TileType::Wall);
@@ -131,6 +180,10 @@ pub fn build_corridor() -> Map {
     for x in 5..25 {
         draft.set_tile(x, 21, TileType::Wall);
     }
+
+    draft.set_tile(2, 22, TileType::SingleTrigger(trigger1));
+    draft.set_tile(23, 22, TileType::SingleTrigger(trigger2));
+    // draft.set_tile(2, 22, TileType::Wall);
 
     draft.to_map((2, 2))
 }

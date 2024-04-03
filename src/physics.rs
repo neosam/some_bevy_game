@@ -1,8 +1,11 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
+#[derive(Component, Default)]
+pub struct SingleTrigger;
+
 #[derive(Bundle)]
-pub struct PysicsBundle {
+pub struct PhysicsBundle {
     pub velocity: Velocity,
     pub collider: Collider,
     pub rigid_body: RigidBody,
@@ -10,9 +13,9 @@ pub struct PysicsBundle {
     pub locked_axes: LockedAxes,
 }
 
-impl PysicsBundle {
+impl PhysicsBundle {
     pub fn dynamic_rectangle(width: f32, height: f32) -> Self {
-        PysicsBundle {
+        PhysicsBundle {
             velocity: Velocity::zero(),
             collider: Collider::cuboid(width / 2.0, height / 2.0),
             rigid_body: RigidBody::Dynamic,
@@ -22,13 +25,26 @@ impl PysicsBundle {
     }
 
     pub fn fixed_rectangle(width: f32, height: f32) -> Self {
-        PysicsBundle {
+        PhysicsBundle {
             velocity: Velocity::zero(),
             collider: Collider::cuboid(width / 2.0, height / 2.0),
             rigid_body: RigidBody::Fixed,
             active_events: ActiveEvents::COLLISION_EVENTS,
             locked_axes: LockedAxes::ROTATION_LOCKED,
         }
+    }
+
+    pub fn trigger(width: f32, height: f32) -> (Self, Sensor) {
+        (
+            PhysicsBundle {
+                velocity: Velocity::zero(),
+                collider: Collider::cuboid(width / 2.0, height / 2.0),
+                rigid_body: RigidBody::Dynamic,
+                active_events: ActiveEvents::COLLISION_EVENTS,
+                locked_axes: LockedAxes::ROTATION_LOCKED,
+            },
+            Sensor,
+        )
     }
 }
 
@@ -83,5 +99,19 @@ pub fn acceleration_controller(mut query: Query<(&mut Velocity, &Acceleration)>,
             .linvel
             .y
             .clamp(-acceleration.max_speed, acceleration.max_speed);
+    }
+}
+
+pub fn remove_after_collision<T1: Component, T2: Component>(
+    mut commands: Commands,
+    mut collision_events: EventReader<
+        some_bevy_tools::collision_detection::CollisionEventStart<T1, T2>,
+    >,
+    query: Query<Entity, With<T2>>,
+) {
+    for collision_event in collision_events.read() {
+        if let Some(entity) = query.get(collision_event.1).ok() {
+            commands.entity(entity).despawn_recursive();
+        }
     }
 }
