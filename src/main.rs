@@ -111,20 +111,6 @@ pub fn startup_ingame(
 
     map_builder::build_corridor().spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
 
-    commands.spawn((
-        SpriteBundle {
-            texture: image_assets.wall.clone(),
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(50.0, 50.0)),
-                ..default()
-            },
-            transform: Transform::from_xyz(200.0, 0.0, 0.0),
-            ..default()
-        },
-        despawn::Cleanup(GameState::InGame),
-        physics::PysicsBundle::fixed_rectangle(50.0, 50.0),
-    ));
-
     let star_material = materials.add(stars::StarMaterial::default());
 
     commands
