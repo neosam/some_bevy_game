@@ -7,6 +7,7 @@ use some_bevy_tools::despawn;
 use uuid::Uuid;
 
 #[derive(Component)]
+#[allow(dead_code)]
 pub struct TileMarker(Uuid);
 
 #[derive(Clone, Copy)]
