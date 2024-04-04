@@ -1,6 +1,6 @@
-use crate::{health, physics};
+use crate::{assets, health, physics};
 use bevy::prelude::*;
-use some_bevy_tools::collision_detection::CollisionEventStart;
+use some_bevy_tools::{audio_loop::AudioLoopEvent, collision_detection::CollisionEventStart};
 
 #[derive(Component)]
 pub enum Direction {
@@ -56,15 +56,23 @@ pub fn tutorial_trigger_system(
         some_bevy_tools::collision_detection::CollisionEventStart<Ship, TutorialTrigger>,
     >,
     query: Query<&TutorialTrigger>,
+    music_assets: Res<assets::MusicAssets>,
+    mut audio_events: EventWriter<AudioLoopEvent>,
 ) {
     for CollisionEventStart(_, trigger, _) in turtorial_trigger1.read() {
         let trigger = query.get(*trigger).unwrap();
         match trigger {
             TutorialTrigger::SimplyForward => {
-                println!("Tutorial trigger 1: SimplyForward");
+                bevy::log::info!("SimplyForward");
+                audio_events.send(AudioLoopEvent::LoopOffset(19.2, music_assets.space.clone()));
             }
             TutorialTrigger::TurnedRight => {
-                println!("Tutorial trigger 2: TurnedRight");
+                bevy::log::info!("TurnedRight");
+                //audio_events.send(AudioLoopEvent::LoopOffset(19.2, music_assets.space.clone()));
+                audio_events.send_batch([
+                    AudioLoopEvent::StartPosition(19.2, music_assets.space.clone()),
+                    AudioLoopEvent::EndPosition(19.2 * 4.0, music_assets.space.clone()),
+                ]);
             }
         }
     }

@@ -7,6 +7,8 @@ use bevy::window::WindowMode;
 use bevy_rapier2d::prelude::*;
 use ship::ship_orientation;
 use ship::TutorialTrigger;
+use some_bevy_tools::audio_loop::AudioLoopEvent;
+use some_bevy_tools::audio_loop::AudioLoopPlugin;
 use some_bevy_tools::camera_2d;
 use some_bevy_tools::controller_2d;
 use some_bevy_tools::despawn;
@@ -58,6 +60,10 @@ fn main() {
             assets::ImageAssets::default(),
             GameState::Loading,
         ))
+        .add_plugins(loading::LoadPluginAssets(
+            assets::MusicAssets::default(),
+            GameState::Loading,
+        ))
         .add_plugins(despawn::CleanupPlugin(GameState::InGame))
         .add_plugins(camera_2d::Camera2DPlugin)
         .add_plugins(controller_2d::TopDownControllerPlugin)
@@ -74,6 +80,7 @@ fn main() {
                 physics::SingleTrigger,
             >::default(),
         )
+        .add_plugins(AudioLoopPlugin)
         .init_state::<GameState>()
         .add_systems(OnEnter(GameState::InGame), startup_ingame)
         .add_systems(
@@ -100,6 +107,8 @@ pub enum GameState {
 pub fn startup_ingame(
     mut commands: Commands,
     image_assets: Res<assets::ImageAssets>,
+    music_assets: Res<assets::MusicAssets>,
+    mut audio_events: EventWriter<AudioLoopEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<stars::StarMaterial>>,
 ) {
@@ -154,6 +163,15 @@ pub fn startup_ingame(
                 },
             ));
         });
+
+    commands.spawn(AudioSourceBundle {
+        source: music_assets.space.clone(),
+        ..default()
+    });
+    audio_events.send(AudioLoopEvent::EndPositionImmediate(
+        19.2,
+        music_assets.space.clone(),
+    ));
 }
 
 fn user_event_handler(

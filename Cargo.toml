@@ -31,7 +31,13 @@ features = ["webgl2"]
 [dependencies.some_bevy_tools]
 version = "0.2.1"
 default-features = false
-features = ["display_deluxe", "loading", "bevy_rapier2d"]
+features = [
+    "display_deluxe",
+    "loading",
+    "bevy_rapier2d",
+    "audio_loop",
+    "audio_deluxe",
+]
 
 [dependencies.bevy_rapier2d]
 version = "0.25.0"

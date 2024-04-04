@@ -12,8 +12,8 @@ pub struct TileMarker(Uuid);
 #[derive(Clone, Copy)]
 pub enum TileType<T: Clone + Copy> {
     Wall,
-    _Trigger(T),
-    SingleTrigger(T),
+    _Trigger(T, f32),
+    SingleTrigger(T, f32),
 }
 
 struct Tile<T: Clone + Copy> {
@@ -24,8 +24,8 @@ struct Tile<T: Clone + Copy> {
 
 enum TileInfo<T: Clone + Copy> {
     Image(Handle<Image>),
-    Trigger(T),
-    SingleTrigger(T),
+    Trigger(T, f32),
+    SingleTrigger(T, f32),
 }
 
 impl<T: Clone + Copy + Component> Tile<T> {
@@ -40,8 +40,12 @@ impl<T: Clone + Copy + Component> Tile<T> {
         let position = Vec3::new(position.x, position.y, 0.0);
         let tile_info = match self.tile_type {
             TileType::Wall => TileInfo::Image(image_assets.wall.clone()),
-            TileType::_Trigger(trigger) => TileInfo::Trigger(trigger),
-            TileType::SingleTrigger(trigger) => TileInfo::SingleTrigger(trigger),
+            TileType::_Trigger(trigger, size_multiplier) => {
+                TileInfo::Trigger(trigger, size_multiplier)
+            }
+            TileType::SingleTrigger(trigger, size_multiplier) => {
+                TileInfo::SingleTrigger(trigger, size_multiplier)
+            }
         };
         match tile_info {
             TileInfo::Image(image) => {
@@ -60,17 +64,17 @@ impl<T: Clone + Copy + Component> Tile<T> {
                     TileMarker(id),
                 ));
             }
-            TileInfo::Trigger(trigger) => {
+            TileInfo::Trigger(trigger, size_multiplier) => {
                 commands.spawn((
-                    physics::PhysicsBundle::trigger(50.0, 50.0),
+                    physics::PhysicsBundle::trigger(50.0, 50.0, size_multiplier),
                     trigger,
                     Transform::from_translation(position),
                     GlobalTransform::default(),
                 ));
             }
-            TileInfo::SingleTrigger(trigger) => {
+            TileInfo::SingleTrigger(trigger, size_multiplier) => {
                 commands.spawn((
-                    physics::PhysicsBundle::trigger(50.0, 50.0),
+                    physics::PhysicsBundle::trigger(50.0, 50.0, size_multiplier),
                     SingleTrigger,
                     trigger,
                     Transform::from_translation(position),
@@ -181,8 +185,8 @@ pub fn build_corridor<T: Clone + Copy + Component>(trigger1: T, trigger2: T) -> 
         draft.set_tile(x, 21, TileType::Wall);
     }
 
-    draft.set_tile(2, 22, TileType::SingleTrigger(trigger1));
-    draft.set_tile(23, 22, TileType::SingleTrigger(trigger2));
+    draft.set_tile(2, 22, TileType::SingleTrigger(trigger1, 1.1));
+    draft.set_tile(23, 22, TileType::SingleTrigger(trigger2, 1.1));
     // draft.set_tile(2, 22, TileType::Wall);
 
     draft.to_map((2, 2))

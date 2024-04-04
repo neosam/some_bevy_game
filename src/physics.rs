@@ -34,11 +34,14 @@ impl PhysicsBundle {
         }
     }
 
-    pub fn trigger(width: f32, height: f32) -> (Self, Sensor) {
+    pub fn trigger(width: f32, height: f32, size_multiplier: f32) -> (Self, Sensor) {
         (
             PhysicsBundle {
                 velocity: Velocity::zero(),
-                collider: Collider::cuboid(width / 2.0, height / 2.0),
+                collider: Collider::cuboid(
+                    width / 2.0 * size_multiplier,
+                    height / 2.0 * size_multiplier,
+                ),
                 rigid_body: RigidBody::Dynamic,
                 active_events: ActiveEvents::COLLISION_EVENTS,
                 locked_axes: LockedAxes::ROTATION_LOCKED,
@@ -105,12 +108,12 @@ pub fn acceleration_controller(mut query: Query<(&mut Velocity, &Acceleration)>,
 pub fn remove_after_collision<T1: Component, T2: Component>(
     mut commands: Commands,
     mut collision_events: EventReader<
-        some_bevy_tools::collision_detection::CollisionEventStart<T1, T2>,
+        some_bevy_tools::collision_detection::CollisionEventStop<T1, T2>,
     >,
     query: Query<Entity, With<T2>>,
 ) {
     for collision_event in collision_events.read() {
-        if let Some(entity) = query.get(collision_event.1).ok() {
+        if let Ok(entity) = query.get(collision_event.1) {
             commands.entity(entity).despawn_recursive();
         }
     }
