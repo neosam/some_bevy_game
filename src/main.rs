@@ -12,13 +12,14 @@ use some_bevy_tools::audio_loop::AudioLoopPlugin;
 use some_bevy_tools::camera_2d;
 use some_bevy_tools::controller_2d;
 use some_bevy_tools::despawn;
+use some_bevy_tools::health;
 use some_bevy_tools::input;
 use some_bevy_tools::loading;
+use some_bevy_tools::physics2d;
+use some_bevy_tools::trigger;
 
 mod assets;
-mod health;
 mod map_builder;
-mod physics;
 mod ship;
 mod stars;
 
@@ -68,29 +69,17 @@ fn main() {
         .add_plugins(camera_2d::Camera2DPlugin)
         .add_plugins(controller_2d::TopDownControllerPlugin)
         .add_plugins(Material2dPlugin::<stars::StarMaterial>::default())
-        .add_plugins(
-            some_bevy_tools::collision_detection::CollisionDetectionPlugin::<
-                ship::Ship,
-                ship::TutorialTrigger,
-            >::default(),
-        )
-        .add_plugins(
-            some_bevy_tools::collision_detection::CollisionDetectionPlugin::<
-                ship::Ship,
-                physics::SingleTrigger,
-            >::default(),
-        )
+        .add_plugins(trigger::PhysicsTriggerPlugin::<ship::Ship, TutorialTrigger>::default())
         .add_plugins(AudioLoopPlugin)
         .init_state::<GameState>()
         .add_systems(OnEnter(GameState::InGame), startup_ingame)
         .add_systems(
             Update,
             (
-                physics::remove_after_collision::<ship::Ship, physics::SingleTrigger>,
                 ship_orientation,
                 user_event_handler,
                 ship::tutorial_trigger_system,
-                physics::acceleration_controller,
+                physics2d::acceleration_controller,
             )
                 .run_if(in_state(GameState::InGame)),
         )
@@ -123,8 +112,8 @@ pub fn startup_ingame(
                     },
                     ..default()
                 },
-                physics_bundle: physics::PhysicsBundle::dynamic_rectangle(50.0, 50.0),
-                acceleration: physics::Acceleration::new(1000.0, 300.0),
+                physics_bundle: physics2d::PhysicsBundle::dynamic_rectangle(50.0, 50.0),
+                acceleration: physics2d::Acceleration::new(1000.0, 300.0),
                 direction: ship::Direction::Up,
                 health: health::Health::new(0.0, 100.0),
                 ship: ship::Ship,
@@ -177,28 +166,28 @@ pub fn startup_ingame(
 fn user_event_handler(
     mut controller_events: EventReader<input::ActionEvent<controller_2d::TopDownAction>>,
     mut query: Query<
-        (&mut physics::Acceleration, &mut ship::Direction),
+        (&mut physics2d::Acceleration, &mut ship::Direction),
         With<controller_2d::SimpleTopDownController>,
     >,
 ) {
     if let Ok((mut acceleration, mut direction)) = query.get_single_mut() {
-        acceleration.direction = physics::AccelerationDirection::None;
+        acceleration.direction = physics2d::AccelerationDirection::None;
         for action in controller_events.read() {
             match action.action {
                 controller_2d::TopDownAction::MoveUp => {
-                    acceleration.direction = physics::AccelerationDirection::Up;
+                    acceleration.direction = physics2d::AccelerationDirection::Up;
                     *direction = ship::Direction::Up;
                 }
                 controller_2d::TopDownAction::MoveDown => {
-                    acceleration.direction = physics::AccelerationDirection::Down;
+                    acceleration.direction = physics2d::AccelerationDirection::Down;
                     *direction = ship::Direction::Down;
                 }
                 controller_2d::TopDownAction::MoveLeft => {
-                    acceleration.direction = physics::AccelerationDirection::Left;
+                    acceleration.direction = physics2d::AccelerationDirection::Left;
                     *direction = ship::Direction::Left;
                 }
                 controller_2d::TopDownAction::MoveRight => {
-                    acceleration.direction = physics::AccelerationDirection::Right;
+                    acceleration.direction = physics2d::AccelerationDirection::Right;
                     *direction = ship::Direction::Right;
                 }
                 _ => {}

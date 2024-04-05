@@ -2907,9 +2907,9 @@ dependencies = [
 
 [[package]]
 name = "some_bevy_tools"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "509abdd8dc588bdc7cc7e681f95e4bc774d8b3252bf6a47b9b5c5743ba3f6ddd"
+checksum = "e04be48635cf913ef839cde3180300eff4f77c4bf709bb1098fd96f1344e8d7b"
 dependencies = [
  "bevy",
  "bevy_rapier2d",

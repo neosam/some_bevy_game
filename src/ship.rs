@@ -1,6 +1,8 @@
-use crate::{assets, health, physics};
+use crate::{assets, health};
 use bevy::prelude::*;
-use some_bevy_tools::{audio_loop::AudioLoopEvent, collision_detection::CollisionEventStart};
+use some_bevy_tools::{
+    audio_loop::AudioLoopEvent, collision_detection::CollisionEventStart, physics2d,
+};
 
 #[derive(Component)]
 pub enum Direction {
@@ -16,9 +18,9 @@ pub struct Ship;
 #[derive(Bundle)]
 pub struct ShipBundle {
     pub sprite_bundle: SpriteBundle,
-    pub physics_bundle: physics::PhysicsBundle,
+    pub physics_bundle: physics2d::PhysicsBundle,
 
-    pub acceleration: physics::Acceleration,
+    pub acceleration: physics2d::Acceleration,
 
     pub direction: Direction,
     pub health: health::Health,
@@ -64,14 +66,16 @@ pub fn tutorial_trigger_system(
         match trigger {
             TutorialTrigger::SimplyForward => {
                 bevy::log::info!("SimplyForward");
-                audio_events.send(AudioLoopEvent::LoopOffset(19.2, music_assets.space.clone()));
+                audio_events.send(AudioLoopEvent::LoopOffsetImmediate(
+                    19.2,
+                    music_assets.space.clone(),
+                ));
             }
             TutorialTrigger::TurnedRight => {
                 bevy::log::info!("TurnedRight");
-                //audio_events.send(AudioLoopEvent::LoopOffset(19.2, music_assets.space.clone()));
                 audio_events.send_batch([
-                    AudioLoopEvent::StartPosition(19.2, music_assets.space.clone()),
-                    AudioLoopEvent::EndPosition(19.2 * 4.0, music_assets.space.clone()),
+                    AudioLoopEvent::StartPositionImmediate(19.2, music_assets.space.clone()),
+                    AudioLoopEvent::EndPositionImmediate(19.2 * 4.0, music_assets.space.clone()),
                 ]);
             }
         }

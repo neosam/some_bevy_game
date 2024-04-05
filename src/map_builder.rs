@@ -1,9 +1,8 @@
 use crate::assets::ImageAssets;
-use crate::physics::SingleTrigger;
-use crate::{physics, GameState};
+use crate::GameState;
 use bevy::prelude::*;
 use core::marker::Copy;
-use some_bevy_tools::despawn;
+use some_bevy_tools::{despawn, physics2d, trigger};
 use uuid::Uuid;
 
 #[derive(Component)]
@@ -61,13 +60,13 @@ impl<T: Clone + Copy + Component> Tile<T> {
                         ..default()
                     },
                     despawn::Cleanup(GameState::InGame),
-                    physics::PhysicsBundle::fixed_rectangle(50.0, 50.0),
+                    physics2d::PhysicsBundle::fixed_rectangle(50.0, 50.0),
                     TileMarker(id),
                 ));
             }
             TileInfo::Trigger(trigger, size_multiplier) => {
                 commands.spawn((
-                    physics::PhysicsBundle::trigger(50.0, 50.0, size_multiplier),
+                    physics2d::PhysicsBundle::trigger(50.0, 50.0, size_multiplier),
                     trigger,
                     Transform::from_translation(position),
                     GlobalTransform::default(),
@@ -75,28 +74,12 @@ impl<T: Clone + Copy + Component> Tile<T> {
             }
             TileInfo::SingleTrigger(trigger, size_multiplier) => {
                 commands.spawn((
-                    physics::PhysicsBundle::trigger(50.0, 50.0, size_multiplier),
-                    SingleTrigger,
+                    physics2d::PhysicsBundle::trigger(50.0, 50.0, size_multiplier),
+                    trigger::SingleTrigger,
                     trigger,
                     Transform::from_translation(position),
                     GlobalTransform::default(),
                 ));
-                //commands.spawn((
-                //    SpriteBundle {
-                //        texture: image_assets.ship.clone(),
-                //        transform: Transform::from_translation(position),
-                //        sprite: Sprite {
-                //            custom_size: Some(Vec2::new(50.0, 50.0)),
-                //            ..default()
-                //        },
-                //        ..default()
-                //    },
-                //    despawn::Cleanup(GameState::InGame),
-                //    TileMarker(id),
-                //    physics::PhysicsBundle::trigger(50.0, 50.0),
-                //    SingleTrigger,
-                //    trigger,
-                //));
             }
         }
     }
