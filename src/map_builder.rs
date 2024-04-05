@@ -152,26 +152,49 @@ impl<T: Clone + Copy + Component> MapDraft<T> {
 }
 
 pub fn build_corridor<T: Clone + Copy + Component>(trigger1: T, trigger2: T) -> Map<T> {
-    let mut draft = MapDraft::new(25, 25);
-    for y in 0..22 {
-        draft.set_tile(4, y, TileType::Wall);
-    }
-    for y in 0..25 {
-        draft.set_tile(0, y, TileType::Wall);
-    }
-    for x in 0..5 {
-        draft.set_tile(x, 0, TileType::Wall);
-    }
-    for x in 0..25 {
-        draft.set_tile(x, 24, TileType::Wall);
-    }
-    for x in 5..25 {
-        draft.set_tile(x, 21, TileType::Wall);
-    }
+    let map = "XXXXXXXXXXXXXXXXXXXXXXXXXXXX \
+                     X                          X \
+                     X 1                      2 X \
+                     X   XXXXXXXXXXXXXXXXXXXXX  X \
+                     X   X                  XX  X \
+                     X   X                  X   XX\
+                     X   X                  X    B\
+                     X   X                  X    B\
+                     X   X                  XXXXXX\
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     X   X                        \
+                     XXXXX                        ";
 
-    draft.set_tile(2, 22, TileType::SingleTrigger(trigger1, 1.1));
-    draft.set_tile(23, 22, TileType::SingleTrigger(trigger2, 1.1));
-    // draft.set_tile(2, 22, TileType::Wall);
+    let mut draft = MapDraft::new(29, 25);
+    for (i, c) in map.chars().enumerate() {
+        match c {
+            _ if c == 'X' => draft.set_tile(i as u32 % 29, 24 - i as u32 / 29, TileType::Wall),
+            _ if c == '1' => draft.set_tile(
+                i as u32 % 29,
+                25 - i as u32 / 29,
+                TileType::SingleTrigger(trigger1, 1.1),
+            ),
+            _ if c == '2' => draft.set_tile(
+                i as u32 % 29,
+                25 - i as u32 / 29,
+                TileType::SingleTrigger(trigger2, 1.1),
+            ),
+            _ => (),
+        }
+    }
 
     draft.to_map((2, 2))
 }
