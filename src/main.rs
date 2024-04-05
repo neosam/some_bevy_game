@@ -17,6 +17,7 @@ use some_bevy_tools::input;
 use some_bevy_tools::loading;
 use some_bevy_tools::physics2d;
 use some_bevy_tools::trigger;
+use stars::StarMaterialSettings;
 
 mod assets;
 mod map_builder;
@@ -29,10 +30,8 @@ fn main() {
         gravity: Vec2::new(0.0, 0.0),
         ..Default::default()
     })
-    .insert_resource(stars::StarMaterialSettings {
-        speed_x: 0.0,
-        speed_y: -10000.0,
-    })
+    .insert_resource(StarMaterialSettings::default())
+    .init_resource::<InGameState>()
     .insert_resource(AssetMetaCheck::Never);
     // Enable fullscreen in wasm
     #[cfg(target_arch = "wasm32")]
@@ -80,6 +79,7 @@ fn main() {
                 user_event_handler,
                 ship::tutorial_trigger_system,
                 physics2d::acceleration_controller,
+                stars::update_stars,
             )
                 .run_if(in_state(GameState::InGame)),
         )
@@ -123,8 +123,12 @@ pub fn startup_ingame(
         ))
         .id();
 
-    map_builder::build_corridor(TutorialTrigger::SimplyForward, TutorialTrigger::TurnedRight)
-        .spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
+    map_builder::build_corridor(
+        TutorialTrigger::SimplyForward,
+        TutorialTrigger::TurnedRight,
+        TutorialTrigger::DeepSpace,
+    )
+    .spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
 
     let star_material = materials.add(stars::StarMaterial::default());
 
@@ -163,13 +167,22 @@ pub fn startup_ingame(
     ));
 }
 
+#[derive(Resource, Default)]
+pub struct InGameState {
+    pub block_controls: bool,
+}
+
 fn user_event_handler(
     mut controller_events: EventReader<input::ActionEvent<controller_2d::TopDownAction>>,
     mut query: Query<
         (&mut physics2d::Acceleration, &mut ship::Direction),
         With<controller_2d::SimpleTopDownController>,
     >,
+    in_game_state: Res<InGameState>,
 ) {
+    if in_game_state.block_controls {
+        return;
+    }
     if let Ok((mut acceleration, mut direction)) = query.get_single_mut() {
         acceleration.direction = physics2d::AccelerationDirection::None;
         for action in controller_events.read() {

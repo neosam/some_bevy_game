@@ -1,4 +1,4 @@
-use crate::{assets, health};
+use crate::{assets, health, stars, InGameState};
 use bevy::prelude::*;
 use some_bevy_tools::{
     audio_loop::AudioLoopEvent, collision_detection::CollisionEventStart, physics2d,
@@ -51,6 +51,7 @@ pub enum TutorialTrigger {
     #[default]
     SimplyForward,
     TurnedRight,
+    DeepSpace,
 }
 
 pub fn tutorial_trigger_system(
@@ -60,6 +61,8 @@ pub fn tutorial_trigger_system(
     query: Query<&TutorialTrigger>,
     music_assets: Res<assets::MusicAssets>,
     mut audio_events: EventWriter<AudioLoopEvent>,
+    mut stars_materials: ResMut<stars::StarMaterialSettings>,
+    mut in_game_state: ResMut<InGameState>,
 ) {
     for CollisionEventStart(_, trigger, _) in turtorial_trigger1.read() {
         let trigger = query.get(*trigger).unwrap();
@@ -77,6 +80,12 @@ pub fn tutorial_trigger_system(
                     AudioLoopEvent::StartPositionImmediate(19.2, music_assets.space.clone()),
                     AudioLoopEvent::EndPositionImmediate(19.2 * 4.0, music_assets.space.clone()),
                 ]);
+            }
+            TutorialTrigger::DeepSpace => {
+                bevy::log::info!("DeepSpace");
+                stars_materials.desired_speed_x = 10000.0;
+                stars_materials.acceleration = 2000.0;
+                in_game_state.block_controls = true;
             }
         }
     }
