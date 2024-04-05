@@ -120,6 +120,7 @@ pub fn startup_ingame(
             },
             despawn::Cleanup(GameState::InGame),
             controller_2d::SimpleTopDownController::new(10.0),
+            ship::Player,
         ))
         .id();
 
