@@ -1,4 +1,6 @@
-use crate::{assets, health, stars, InGameState};
+use std::time::Duration;
+
+use crate::{assets, health, stars, InGameState, Logo};
 use bevy::prelude::*;
 use bevy_rapier2d::dynamics::Velocity;
 use some_bevy_tools::{
@@ -68,6 +70,10 @@ pub fn tutorial_trigger_system(
     mut in_game_state: ResMut<InGameState>,
     mut ship_direction: Query<(&mut Direction, &mut Velocity), (With<Ship>, With<Player>)>,
     mut camera_query: Query<&mut some_bevy_tools::camera_2d::Camera2DController>,
+    mut logo_query: Query<&mut Visibility, With<Logo>>,
+    time: Res<Time>,
+    mut logo_timer: Local<Option<Timer>>,
+    mut logo_disappear_timer: Local<Option<Timer>>,
 ) {
     for CollisionEventStart(_, trigger, _) in turtorial_trigger1.read() {
         let trigger = query.get(*trigger).unwrap();
@@ -99,7 +105,22 @@ pub fn tutorial_trigger_system(
                 let mut camera_controller = camera_query.get_single_mut().unwrap();
                 camera_controller.mode = some_bevy_tools::camera_2d::Camera2DMode::Move;
                 camera_controller.speed = 310.0;
+
+                *logo_timer = Some(Timer::new(Duration::from_secs(2), TimerMode::Once));
             }
+        }
+    }
+    if let Some(timer) = logo_timer.as_mut() {
+        if timer.tick(time.delta()).just_finished() {
+            let mut logo_visibility = logo_query.get_single_mut().unwrap();
+            *logo_visibility = Visibility::Visible;
+            *logo_disappear_timer = Some(Timer::new(Duration::from_secs(7), TimerMode::Once));
+        }
+    }
+    if let Some(timer) = logo_disappear_timer.as_mut() {
+        if timer.tick(time.delta()).just_finished() {
+            let mut logo_visibility = logo_query.get_single_mut().unwrap();
+            *logo_visibility = Visibility::Hidden;
         }
     }
 }

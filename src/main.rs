@@ -71,7 +71,7 @@ fn main() {
         .add_plugins(trigger::PhysicsTriggerPlugin::<ship::Ship, TutorialTrigger>::default())
         .add_plugins(AudioLoopPlugin)
         .init_state::<GameState>()
-        .add_systems(OnEnter(GameState::InGame), startup_ingame)
+        .add_systems(OnEnter(GameState::InGame), (startup_ingame, show_logo))
         .add_systems(
             Update,
             (
@@ -208,4 +208,34 @@ fn user_event_handler(
             }
         }
     }
+}
+
+#[derive(Component)]
+pub struct Logo;
+
+pub fn show_logo(mut commands: Commands, image_assets: Res<assets::ImageAssets>) {
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                ..default()
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn((
+                ImageBundle {
+                    image: UiImage::new(image_assets.logo_overlay.clone()),
+                    style: Style {
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
+                        ..default()
+                    },
+                    visibility: Visibility::Hidden,
+                    ..default()
+                },
+                Logo,
+            ));
+        });
 }
