@@ -1,3 +1,6 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
+
 use std::time::Duration;
 
 use crate::{assets, health, stars, InGameState, Logo};
@@ -13,6 +16,16 @@ pub enum Direction {
     Right,
     Up,
     Down,
+}
+impl Direction {
+    pub fn vector(&self) -> Vec2 {
+        match self {
+            Direction::Left => Vec2::new(-1.0, 0.0),
+            Direction::Right => Vec2::new(1.0, 0.0),
+            Direction::Up => Vec2::new(0.0, 1.0),
+            Direction::Down => Vec2::new(0.0, -1.0),
+        }
+    }
 }
 
 #[derive(Component, Default)]

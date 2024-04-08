@@ -6,6 +6,8 @@ pub struct ImageAssets {
     pub ship: Handle<Image>,
     pub wall: Handle<Image>,
     pub logo_overlay: Handle<Image>,
+    pub bullet: Handle<Image>,
+    pub rock: Handle<Image>,
 }
 impl loading::EasyAssetLoader for ImageAssets {
     type AssetType = Image;
@@ -14,6 +16,8 @@ impl loading::EasyAssetLoader for ImageAssets {
             ("ship", "ship.png"),
             ("wall", "wall.png"),
             ("logo_overlay", "logo-overlay.png"),
+            ("bullet", "bullet.png"),
+            ("rock", "rock.png"),
         ]
     }
 }

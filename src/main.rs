@@ -5,6 +5,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 #[cfg(target_arch = "wasm32")]
 use bevy::window::WindowMode;
 use bevy_rapier2d::prelude::*;
+use bullet::BulletPlugin;
 use ship::ship_orientation;
 use ship::TutorialTrigger;
 use some_bevy_tools::audio_loop::AudioLoopEvent;
@@ -20,6 +21,7 @@ use some_bevy_tools::trigger;
 use stars::StarMaterialSettings;
 
 mod assets;
+mod bullet;
 mod map_builder;
 mod ship;
 mod stars;
@@ -70,6 +72,7 @@ fn main() {
         .add_plugins(Material2dPlugin::<stars::StarMaterial>::default())
         .add_plugins(trigger::PhysicsTriggerPlugin::<ship::Ship, TutorialTrigger>::default())
         .add_plugins(AudioLoopPlugin)
+        .add_plugins(BulletPlugin)
         .init_state::<GameState>()
         .add_systems(OnEnter(GameState::InGame), (startup_ingame, show_logo))
         .add_systems(
@@ -168,6 +171,9 @@ pub fn startup_ingame(
     ));
 }
 
+#[derive(Component, Default)]
+pub struct StaticWall;
+
 #[derive(Resource, Default)]
 pub struct InGameState {
     pub block_controls: bool,
@@ -175,16 +181,19 @@ pub struct InGameState {
 
 fn user_event_handler(
     mut controller_events: EventReader<input::ActionEvent<controller_2d::TopDownAction>>,
+    mut bullet_events: EventWriter<bullet::ShootBullet>,
     mut query: Query<
-        (&mut physics2d::Acceleration, &mut ship::Direction),
+        (Entity, &mut physics2d::Acceleration, &mut ship::Direction),
         With<controller_2d::SimpleTopDownController>,
     >,
     in_game_state: Res<InGameState>,
+    mut next_shoot_time: Local<f32>,
+    time: Res<Time>,
 ) {
     if in_game_state.block_controls {
         return;
     }
-    if let Ok((mut acceleration, mut direction)) = query.get_single_mut() {
+    if let Ok((ship_entity, mut acceleration, mut direction)) = query.get_single_mut() {
         acceleration.direction = physics2d::AccelerationDirection::None;
         for action in controller_events.read() {
             match action.action {
@@ -203,6 +212,12 @@ fn user_event_handler(
                 controller_2d::TopDownAction::MoveRight => {
                     acceleration.direction = physics2d::AccelerationDirection::Right;
                     *direction = ship::Direction::Right;
+                }
+                controller_2d::TopDownAction::Action => {
+                    if time.elapsed_seconds() > *next_shoot_time {
+                        bullet_events.send(bullet::ShootBullet { ship: ship_entity });
+                        *next_shoot_time = time.elapsed_seconds() + 0.5;
+                    }
                 }
                 _ => {}
             }

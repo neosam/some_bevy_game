@@ -1,7 +1,8 @@
-use crate::assets::ImageAssets;
 use crate::GameState;
+use crate::{assets::ImageAssets, StaticWall};
 use bevy::prelude::*;
 use core::marker::Copy;
+use some_bevy_tools::health::Health;
 use some_bevy_tools::{despawn, physics2d, trigger};
 use uuid::Uuid;
 
@@ -12,6 +13,7 @@ pub struct TileMarker(Uuid);
 #[derive(Clone, Copy)]
 pub enum TileType<T: Clone + Copy> {
     Wall,
+    Rock,
     _Trigger(T, f32),
     SingleTrigger(T, f32),
 }
@@ -23,7 +25,8 @@ struct Tile<T: Clone + Copy> {
 }
 
 enum TileInfo<T: Clone + Copy> {
-    Image(Handle<Image>),
+    StaticImage(Handle<Image>),
+    HealthImage(Handle<Image>, f32),
     Trigger(T, f32),
     SingleTrigger(T, f32),
 }
@@ -39,7 +42,8 @@ impl<T: Clone + Copy + Component> Tile<T> {
         let position = Vec2::new(self.x as f32 * 50.0, self.y as f32 * 50.0) + center;
         let position = Vec3::new(position.x, position.y, 0.0);
         let tile_info = match self.tile_type {
-            TileType::Wall => TileInfo::Image(image_assets.wall.clone()),
+            TileType::Wall => TileInfo::StaticImage(image_assets.wall.clone()),
+            TileType::Rock => TileInfo::HealthImage(image_assets.rock.clone(), 10.0),
             TileType::_Trigger(trigger, size_multiplier) => {
                 TileInfo::Trigger(trigger, size_multiplier)
             }
@@ -48,7 +52,7 @@ impl<T: Clone + Copy + Component> Tile<T> {
             }
         };
         match tile_info {
-            TileInfo::Image(image) => {
+            TileInfo::StaticImage(image) => {
                 commands.spawn((
                     SpriteBundle {
                         texture: image,
@@ -62,6 +66,24 @@ impl<T: Clone + Copy + Component> Tile<T> {
                     despawn::Cleanup(GameState::InGame),
                     physics2d::PhysicsBundle::fixed_rectangle(50.0, 50.0),
                     TileMarker(id),
+                    StaticWall,
+                ));
+            }
+            TileInfo::HealthImage(image, health) => {
+                commands.spawn((
+                    SpriteBundle {
+                        texture: image,
+                        transform: Transform::from_translation(position),
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::new(50.0, 50.0)),
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    despawn::Cleanup(GameState::InGame),
+                    physics2d::PhysicsBundle::fixed_rectangle(50.0, 50.0),
+                    TileMarker(id),
+                    Health::new(0.0, health),
                 ));
             }
             TileInfo::Trigger(trigger, size_multiplier) => {
@@ -162,8 +184,8 @@ pub fn build_corridor<T: Clone + Copy + Component>(
                      X   XXXXXXXXXXXXXXXXXXXXX  X \
                      X   X                  XX  X \
                      X   X                  X   XX\
-                     X   X                  X    3\
-                     X   X                  X     \
+                     X   X                  X   O3\
+                     X   X                  X   O \
                      X   X                  X   XX\
                      X   X                  XXXXX \
                      X   X                        \
@@ -188,6 +210,7 @@ pub fn build_corridor<T: Clone + Copy + Component>(
         let y = 24 - i as u32 / 29;
         match c {
             _ if c == 'X' => draft.set_tile(x, y, TileType::Wall),
+            _ if c == 'O' => draft.set_tile(x, y, TileType::Rock),
             _ if c == '1' => draft.set_tile(x, y, TileType::SingleTrigger(trigger1, 1.1)),
             _ if c == '2' => draft.set_tile(x, y, TileType::SingleTrigger(trigger2, 1.1)),
             _ if c == '3' => draft.set_tile(x, y, TileType::SingleTrigger(trigger3, 1.1)),
