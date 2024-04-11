@@ -171,52 +171,21 @@ impl<T: Clone + Copy + Component> MapDraft<T> {
         }
         map
     }
-}
 
-pub fn build_corridor<T: Clone + Copy + Component>(
-    trigger1: T,
-    trigger2: T,
-    trigger3: T,
-) -> Map<T> {
-    let map = "XXXXXXXXXXXXXXXXXXXXXXXXXXXX \
-                     X                          X \
-                     X 1                      2 X \
-                     X   XXXXXXXXXXXXXXXXXXXXX  X \
-                     X   X                  XX  X \
-                     X   X                  X   XX\
-                     X   X                  X   O3\
-                     X   X                  X   O \
-                     X   X                  X   XX\
-                     X   X                  XXXXX \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     X   X                        \
-                     XXXXX                        ";
-
-    let mut draft = MapDraft::new(29, 25);
-    for (i, c) in map.chars().enumerate() {
-        let x = i as u32 % 29;
-        let y = 24 - i as u32 / 29;
-        match c {
-            _ if c == 'X' => draft.set_tile(x, y, TileType::Wall),
-            _ if c == 'O' => draft.set_tile(x, y, TileType::Rock),
-            _ if c == '1' => draft.set_tile(x, y, TileType::SingleTrigger(trigger1, 1.1)),
-            _ if c == '2' => draft.set_tile(x, y, TileType::SingleTrigger(trigger2, 1.1)),
-            _ if c == '3' => draft.set_tile(x, y, TileType::SingleTrigger(trigger3, 1.1)),
-            _ => (),
+    pub fn from_str(
+        map_str: &str,
+        width: u32,
+        height: u32,
+        tile_mapper: Box<dyn Fn(char) -> Option<TileType<T>>>,
+    ) -> MapDraft<T> {
+        let mut draft = MapDraft::new(width, height);
+        for (i, c) in map_str.chars().enumerate() {
+            let x = i as u32 % width;
+            let y = height - 1 - i as u32 / width;
+            if let Some(tile) = tile_mapper(c) {
+                draft.set_tile(x, y, tile);
+            }
         }
+        draft
     }
-
-    draft.to_map((2, 2))
 }

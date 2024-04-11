@@ -23,6 +23,7 @@ use stars::StarMaterialSettings;
 mod assets;
 mod bullet;
 mod map_builder;
+mod maps;
 mod ship;
 mod stars;
 
@@ -127,12 +128,7 @@ pub fn startup_ingame(
         ))
         .id();
 
-    map_builder::build_corridor(
-        TutorialTrigger::SimplyForward,
-        TutorialTrigger::TurnedRight,
-        TutorialTrigger::DeepSpace,
-    )
-    .spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
+    maps::tutorial::build_tutorial().spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
 
     let star_material = materials.add(stars::StarMaterial::default());
 
