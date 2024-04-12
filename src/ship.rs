@@ -3,7 +3,7 @@
 
 use std::time::Duration;
 
-use crate::{assets, health, stars, InGameState, Logo};
+use crate::{assets, error_handler::GameError, health, maps, stars, InGameState, Logo};
 use bevy::prelude::*;
 use bevy_rapier2d::dynamics::Velocity;
 use some_bevy_tools::{
@@ -73,6 +73,8 @@ pub enum TutorialTrigger {
 }
 
 pub fn tutorial_trigger_system(
+    mut commands: Commands,
+    image_assets: Res<assets::ImageAssets>,
     mut turtorial_trigger1: EventReader<
         some_bevy_tools::collision_detection::CollisionEventStart<Ship, TutorialTrigger>,
     >,
@@ -81,13 +83,16 @@ pub fn tutorial_trigger_system(
     mut audio_events: EventWriter<AudioLoopEvent>,
     mut stars_materials: ResMut<stars::StarMaterialSettings>,
     mut in_game_state: ResMut<InGameState>,
-    mut ship_direction: Query<(&mut Direction, &mut Velocity), (With<Ship>, With<Player>)>,
+    mut ship_direction: Query<
+        (&mut Direction, &mut Velocity, &Transform),
+        (With<Ship>, With<Player>),
+    >,
     mut camera_query: Query<&mut some_bevy_tools::camera_2d::Camera2DController>,
     mut logo_query: Query<&mut Visibility, With<Logo>>,
     time: Res<Time>,
     mut logo_timer: Local<Option<Timer>>,
     mut logo_disappear_timer: Local<Option<Timer>>,
-) {
+) -> Result<(), GameError> {
     for CollisionEventStart(_, trigger, _) in turtorial_trigger1.read() {
         let trigger = query.get(*trigger).unwrap();
         match trigger {
@@ -110,7 +115,7 @@ pub fn tutorial_trigger_system(
                 stars_materials.desired_speed_x = 10000.0;
                 stars_materials.acceleration = 2000.0;
                 in_game_state.block_controls = true;
-                let (mut direction, mut velocity) = ship_direction.get_single_mut().unwrap();
+                let (mut direction, mut velocity, _) = ship_direction.get_single_mut().unwrap();
                 *direction = Direction::Right;
                 velocity.linvel.x = 300.0;
                 velocity.linvel.y = 0.0;
@@ -132,8 +137,24 @@ pub fn tutorial_trigger_system(
     }
     if let Some(timer) = logo_disappear_timer.as_mut() {
         if timer.tick(time.delta()).just_finished() {
+            let (_, mut velocity, transform) = ship_direction.get_single_mut().unwrap();
+            velocity.linvel.x = 0.0;
+            velocity.linvel.y = 0.0;
+
             let mut logo_visibility = logo_query.get_single_mut().unwrap();
             *logo_visibility = Visibility::Hidden;
+            maps::level_1::build_level_1()?.spawn_tiles(
+                &mut commands,
+                &image_assets,
+                transform.translation.xy(),
+            );
+
+            let mut camera_controller = camera_query.get_single_mut().unwrap();
+            camera_controller.mode = some_bevy_tools::camera_2d::Camera2DMode::Follow;
+            in_game_state.block_controls = false;
+            stars_materials.desired_speed_x = 0.0;
+            stars_materials.acceleration = 20000.0;
         }
     }
+    Ok(())
 }

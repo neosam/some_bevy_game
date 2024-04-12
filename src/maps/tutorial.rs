@@ -23,7 +23,7 @@ fn tutorial_tile_mapper(c: char) -> Option<map_builder::TileType<ship::TutorialT
     }
 }
 
-pub fn build_tutorial() -> map_builder::Map<TutorialTrigger> {
+pub fn build_tutorial() -> Result<map_builder::Map<TutorialTrigger>, map_builder::MapDraftError> {
     let map = "XXXXXXXXXXXXXXXXXXXXXXXXXXXX \
                      X                          X \
                      X 1                      2 X \
@@ -49,7 +49,7 @@ pub fn build_tutorial() -> map_builder::Map<TutorialTrigger> {
                      X   X                        \
                      X   X                        \
                      XXXXX                        ";
-    let draft = map_builder::MapDraft::from_str(map, 29, 25, Box::new(tutorial_tile_mapper));
+    let draft = map_builder::MapDraft::from_str(map, 29, 25, Box::new(tutorial_tile_mapper))?;
 
-    draft.to_map((2, 2))
+    Ok(draft.to_map((2, 2)))
 }

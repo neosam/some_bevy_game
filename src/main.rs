@@ -6,6 +6,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::WindowMode;
 use bevy_rapier2d::prelude::*;
 use bullet::BulletPlugin;
+use error_handler::GameError;
 use ship::ship_orientation;
 use ship::TutorialTrigger;
 use some_bevy_tools::audio_loop::AudioLoopEvent;
@@ -22,6 +23,7 @@ use stars::StarMaterialSettings;
 
 mod assets;
 mod bullet;
+mod error_handler;
 mod map_builder;
 mod maps;
 mod ship;
@@ -75,13 +77,16 @@ fn main() {
         .add_plugins(AudioLoopPlugin)
         .add_plugins(BulletPlugin)
         .init_state::<GameState>()
-        .add_systems(OnEnter(GameState::InGame), (startup_ingame, show_logo))
+        .add_systems(
+            OnEnter(GameState::InGame),
+            (startup_ingame.pipe(error_handler::error_handler), show_logo),
+        )
         .add_systems(
             Update,
             (
                 ship_orientation,
                 user_event_handler,
-                ship::tutorial_trigger_system,
+                ship::tutorial_trigger_system.pipe(error_handler::error_handler),
                 physics2d::acceleration_controller,
                 stars::update_stars,
             )
@@ -104,7 +109,7 @@ pub fn startup_ingame(
     mut audio_events: EventWriter<AudioLoopEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<stars::StarMaterial>>,
-) {
+) -> Result<(), GameError> {
     let player = commands
         .spawn((
             ship::ShipBundle {
@@ -128,7 +133,7 @@ pub fn startup_ingame(
         ))
         .id();
 
-    maps::tutorial::build_tutorial().spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
+    maps::tutorial::build_tutorial()?.spawn_tiles(&mut commands, &image_assets, Vec2::ZERO);
 
     let star_material = materials.add(stars::StarMaterial::default());
 
@@ -165,6 +170,8 @@ pub fn startup_ingame(
         19.2,
         music_assets.space.clone(),
     ));
+
+    Ok(())
 }
 
 #[derive(Component, Default)]

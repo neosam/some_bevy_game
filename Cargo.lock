@@ -2996,6 +2996,7 @@ dependencies = [
  "bevy",
  "bevy_rapier2d",
  "some_bevy_tools",
+ "thiserror",
  "uuid",
 ]
 

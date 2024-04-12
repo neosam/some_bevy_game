@@ -26,7 +26,7 @@ opt-level = 3
 [dependencies.bevy]
 version = "0.13.1"
 default-features = false
-features = ["webgl2", "bevy_ui"]
+features = ["webgl2", "bevy_ui", "multi-threaded"]
 
 [dependencies.some_bevy_tools]
 version = "0.2.2"
@@ -44,3 +44,6 @@ version = "0.25.0"
 
 [dependencies.uuid]
 version = "1.4.1"
+
+[dependencies.thiserror]
+version = "1.0"

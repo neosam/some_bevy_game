@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use core::marker::Copy;
 use some_bevy_tools::health::Health;
 use some_bevy_tools::{despawn, physics2d, trigger};
+use thiserror::Error;
 use uuid::Uuid;
 
 #[derive(Component)]
@@ -127,6 +128,15 @@ impl<T: Clone + Copy + Component> Map<T> {
     }
 }
 
+#[derive(Error, Debug)]
+pub enum MapDraftError {
+    #[error("str width is inconsistent. Every &str of a [&str] must have the same length")]
+    InconsistentWidth,
+
+    #[error("str length does not match, must be width times height long")]
+    StrLengthMismatch,
+}
+
 pub struct MapDraft<T: Clone + Copy> {
     pub width: u32,
     pub tiles: Vec<Option<TileType<T>>>,
@@ -177,7 +187,10 @@ impl<T: Clone + Copy + Component> MapDraft<T> {
         width: u32,
         height: u32,
         tile_mapper: Box<dyn Fn(char) -> Option<TileType<T>>>,
-    ) -> MapDraft<T> {
+    ) -> Result<MapDraft<T>, MapDraftError> {
+        if map_str.len() as u32 != width * height {
+            return Err(MapDraftError::StrLengthMismatch);
+        }
         let mut draft = MapDraft::new(width, height);
         for (i, c) in map_str.chars().enumerate() {
             let x = i as u32 % width;
@@ -186,6 +199,26 @@ impl<T: Clone + Copy + Component> MapDraft<T> {
                 draft.set_tile(x, y, tile);
             }
         }
-        draft
+        Ok(draft)
+    }
+
+    pub fn from_str_array(
+        array: &[&str],
+        tile_mapper: Box<dyn Fn(char) -> Option<TileType<T>>>,
+    ) -> Result<MapDraft<T>, MapDraftError> {
+        let width = array[0].len() as u32;
+        let height = array.len() as u32;
+        let mut draft = MapDraft::new(width, height);
+        for (y, line) in array.iter().rev().enumerate() {
+            if line.len() as u32 != width {
+                return Err(MapDraftError::InconsistentWidth);
+            }
+            for (x, c) in line.chars().enumerate() {
+                if let Some(tile) = tile_mapper(c) {
+                    draft.set_tile(x as u32, y as u32, tile);
+                }
+            }
+        }
+        Ok(draft)
     }
 }
