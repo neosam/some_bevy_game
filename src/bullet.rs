@@ -56,7 +56,7 @@ pub fn damage_system(
             if damager.damager_type == DamagerType::SelfDestruct {
                 commands
                     .entity(*damager_entity)
-                    .insert(some_bevy_tools::despawn::AutoDespawn::new(0.1));
+                    .insert(some_bevy_tools::despawn::AutoDespawn::with_duration(0.1));
             }
         }
     }
@@ -110,7 +110,7 @@ impl BulletBundle {
                 ..physics2d::PhysicsBundle::dynamic_rectangle(50.0, 50.0)
             },
             damage: Damager::new_self_destruct(strength),
-            auto_despawn: some_bevy_tools::despawn::AutoDespawn::new(5.0),
+            auto_despawn: some_bevy_tools::despawn::AutoDespawn::with_duration(5.0),
         }
     }
 }
@@ -144,7 +144,7 @@ pub fn despawn_bullet_on_collision<T: Component>(
     for CollisionEventStart(_, damager_entity, _) in wall_collider.read() {
         commands
             .entity(*damager_entity)
-            .insert(AutoDespawn::new(0.1));
+            .insert(AutoDespawn::with_duration(0.1));
     }
 }
 

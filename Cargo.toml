@@ -24,12 +24,12 @@ opt-level = 1
 opt-level = 3
 
 [dependencies.bevy]
-version = "0.13.1"
+version = "0.13"
 default-features = false
-features = ["webgl2", "bevy_ui", "multi-threaded"]
+features = ["webgl2", "bevy_ui"]
 
 [dependencies.some_bevy_tools]
-version = "0.2.2"
+version = "0.2.4"
 default-features = false
 features = [
     "display_deluxe",
